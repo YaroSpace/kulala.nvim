@@ -228,7 +228,6 @@ M.from_curl = function()
   print_http_spec(spec, curl)
 end
 
-<<<<<<< HEAD
 local function open_default_view()
   local default_view = CONFIG.get().default_view
 
@@ -242,20 +241,6 @@ local function open_default_view()
   end
 end
 
-||||||| parent of d353b87 (feat(ui): add verbose mode (#331))
-=======
-local function open_default_view()
-  local default_view = CONFIG.get().default_view
-
-  if not buffer_exists() then
-    open_buffer()
-  end
-
-  local open_view = M["show_" .. default_view]
-  if open_view then open_view() end
-end
-
->>>>>>> d353b87 (feat(ui): add verbose mode (#331))
 M.open = function()
   INLAY.clear()
   vim.schedule(function()
@@ -290,6 +275,11 @@ end
 M.open_all = function()
   INLAY.clear()
   local variables, requests = PARSER.get_document()
+
+  if not requests then
+    return Logger.error("No requests found in the documents")
+  end
+
   CMD.run_parser_all(requests, variables, function(success, start, icon_linenr)
     if not success then
       if icon_linenr then
@@ -377,7 +367,6 @@ M.show_headers_body = function()
   end
 end
 
-<<<<<<< HEAD
 M.show_verbose = function()
   if not FS.file_exists(GLOBALS.BODY_FILE) then
     return vim.notify("No body found", vim.log.levels.WARN)
@@ -405,35 +394,6 @@ M.show_verbose = function()
   CONFIG.options.default_view = "verbose"
 end
 
-||||||| parent of d353b87 (feat(ui): add verbose mode (#331))
-=======
-M.show_verbose = function()
-  if not FS.file_exists(GLOBALS.BODY_FILE) then
-    return vim.notify("No body found", vim.log.levels.WARN)
-  end
-
-  if not buffer_exists() then
-    open_buffer()
-  end
-
-  local errors = FS.file_exists(GLOBALS.ERRORS_FILE) and (FS.read_file(GLOBALS.ERRORS_FILE):gsub("\r", "") .. "\n") or ""
-  local body = FS.read_file(GLOBALS.BODY_FILE)
-
-  local contenttype = INT_PROCESSING.get_config_contenttype()
-  if contenttype.formatter then
-    body = FORMATTER.format(contenttype.formatter, body)
-  end
-
-  set_buffer_contents(errors .. body, contenttype.ft)
-
-  if CONFIG.get().winbar then
-    WINBAR.toggle_winbar_tab(get_win(), "verbose")
-  end
-
-  CONFIG.options.default_view = "verbose"
-end
-
->>>>>>> d353b87 (feat(ui): add verbose mode (#331))
 M.show_stats = function()
   local stats = FS.read_file(GLOBALS.STATS_FILE)
   if stats ~= nil then

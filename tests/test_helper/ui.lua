@@ -1,7 +1,6 @@
 local api = vim.api
 
 local UITestHelper = {}
-<<<<<<< HEAD
 local h = UITestHelper
 
 --Remove tabs and spaces as tabs
@@ -37,55 +36,22 @@ h.to_table = function(str, clean)
   return vim
     .iter(vim.split(str or "", "\n", { trimempty = clean }))
     :map(function(line)
-      return clean and tostring(line:clean()) or line
+      return clean and line:clean() or line
     end)
     :totable()
 end
 
-h.load_fixture = function(fixture_name)
+---@param fixture_name string
+---@param table? boolean
+---@return table|string
+h.load_fixture = function(fixture_name, table)
+  table = default_true(table)
+
   local fixtures_path = vim.uv.cwd() .. "/tests/ui/fixtures/"
-  return h.to_string(vim.fn.readfile(fixtures_path .. fixture_name), false)
+  local contents = vim.fn.readfile(fixtures_path .. fixture_name)
+
+  return table and contents or h.to_string(contents, false)
 end
-||||||| parent of d353b87 (feat(ui): add verbose mode (#331))
-=======
-local h = UITestHelper
-
---Remove tabs and spaces as tabs
----@diagnostic disable-next-line: duplicate-set-field
-string.clean = function(str) --luacheck: ignore
-  str = vim.trim(str:gsub("\t", "")):gsub("^%s+", ""):gsub("%s+$", "")
-  return tostring(str)
-end
-
-local function default_true(arg)
-  if arg == false then return false else return true end
-end
-
----@param tbl string[]|string
-h.to_string = function(tbl, clean)
-  tbl = tbl or {}
-  tbl = type(tbl) == "table" and tbl or { tbl }
-
-  clean = default_true(clean)
-  tbl = clean and h.to_table(table.concat(tbl, "\n")) or tbl
-
-  return table.concat(tbl, "\n")
-end
-
-h.to_table = function(str, clean)
-  clean = default_true(clean)
-  str = type(str) == 'table' and h.to_string(str, clean) or str
-
-  return vim.iter(vim.split(str or "", "\n", { trimempty = clean })):map(function(line)
-      return clean and tostring(line:clean()) or line
-    end):totable()
-end
-
-h.load_fixture = function(fixture_name)
-  local fixtures_path = vim.uv.cwd() .. "/tests/ui/fixtures/"
-  return h.to_string(vim.fn.readfile(fixtures_path .. fixture_name), false)
-end
->>>>>>> d353b87 (feat(ui): add verbose mode (#331))
 
 UITestHelper.delete_all_bufs = function()
   -- Get a list of all buffer numbers
@@ -144,6 +110,14 @@ UITestHelper.list_loaded_bufs = function()
   end
 
   return loaded_bufs
+end
+
+---@return table [id:name]
+UITestHelper.list_loaded_buf_names = function()
+  return vim.iter(vim.api.nvim_list_bufs()):fold({}, function(acc, id)
+    acc[id] = vim.fn.bufname(id)
+    return acc
+  end)
 end
 
 return UITestHelper

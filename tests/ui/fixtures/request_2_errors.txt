@@ -20,5 +20,3 @@
 * Connection #0 to host localhost left intact
 
 
-Hello, World!
-Request #1
