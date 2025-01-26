@@ -2,6 +2,7 @@ local UICallbacks = require("kulala.ui.callbacks")
 local WINBAR = require("kulala.ui.winbar")
 local GLOBALS = require("kulala.globals")
 local CONFIG = require("kulala.config")
+local Q_TO_CLOSE_FLOAT = CONFIG.get().display_mode == "float" and CONFIG.get().q_to_close_float
 local INLAY = require("kulala.inlay")
 local PARSER = require("kulala.parser")
 local CURL_PARSER = require("kulala.parser.curl")
@@ -87,6 +88,11 @@ local replace_buffer = function()
   for _, callback in ipairs(callbacks) do
     callback(old_bufnr, new_bufnr)
   end
+
+  if Q_TO_CLOSE_FLOAT then
+    vim.api.nvim_buf_set_keymap(new_bufnr, "n", "q", ":bd<CR>", { noremap = true, silent = true })
+  end
+
   return new_bufnr
 end
 
@@ -222,6 +228,7 @@ M.from_curl = function()
   print_http_spec(spec, curl)
 end
 
+<<<<<<< HEAD
 local function open_default_view()
   local default_view = CONFIG.get().default_view
 
@@ -235,6 +242,20 @@ local function open_default_view()
   end
 end
 
+||||||| parent of d353b87 (feat(ui): add verbose mode (#331))
+=======
+local function open_default_view()
+  local default_view = CONFIG.get().default_view
+
+  if not buffer_exists() then
+    open_buffer()
+  end
+
+  local open_view = M["show_" .. default_view]
+  if open_view then open_view() end
+end
+
+>>>>>>> d353b87 (feat(ui): add verbose mode (#331))
 M.open = function()
   INLAY.clear()
   vim.schedule(function()
@@ -247,7 +268,7 @@ M.open = function()
     if req.show_icon_line_number then
       INLAY:show_loading(req.show_icon_line_number)
     end
-    CMD.run_parser(req, function(success, start)
+    CMD.run_parser(requests, req, function(success, start)
       if not success then
         if req.show_icon_line_number then
           INLAY:show_error(req.show_icon_line_number)
@@ -268,8 +289,8 @@ end
 
 M.open_all = function()
   INLAY.clear()
-  local _, requests = PARSER.get_document()
-  CMD.run_parser_all(requests, function(success, start, icon_linenr)
+  local variables, requests = PARSER.get_document()
+  CMD.run_parser_all(requests, variables, function(success, start, icon_linenr)
     if not success then
       if icon_linenr then
         INLAY:show_error(icon_linenr)
@@ -356,6 +377,7 @@ M.show_headers_body = function()
   end
 end
 
+<<<<<<< HEAD
 M.show_verbose = function()
   if not FS.file_exists(GLOBALS.BODY_FILE) then
     return vim.notify("No body found", vim.log.levels.WARN)
@@ -383,6 +405,35 @@ M.show_verbose = function()
   CONFIG.options.default_view = "verbose"
 end
 
+||||||| parent of d353b87 (feat(ui): add verbose mode (#331))
+=======
+M.show_verbose = function()
+  if not FS.file_exists(GLOBALS.BODY_FILE) then
+    return vim.notify("No body found", vim.log.levels.WARN)
+  end
+
+  if not buffer_exists() then
+    open_buffer()
+  end
+
+  local errors = FS.file_exists(GLOBALS.ERRORS_FILE) and (FS.read_file(GLOBALS.ERRORS_FILE):gsub("\r", "") .. "\n") or ""
+  local body = FS.read_file(GLOBALS.BODY_FILE)
+
+  local contenttype = INT_PROCESSING.get_config_contenttype()
+  if contenttype.formatter then
+    body = FORMATTER.format(contenttype.formatter, body)
+  end
+
+  set_buffer_contents(errors .. body, contenttype.ft)
+
+  if CONFIG.get().winbar then
+    WINBAR.toggle_winbar_tab(get_win(), "verbose")
+  end
+
+  CONFIG.options.default_view = "verbose"
+end
+
+>>>>>>> d353b87 (feat(ui): add verbose mode (#331))
 M.show_stats = function()
   local stats = FS.read_file(GLOBALS.STATS_FILE)
   if stats ~= nil then
@@ -467,7 +518,7 @@ M.replay = function()
     return
   end
   vim.schedule(function()
-    CMD.run_parser(result, function(success)
+    CMD.run_parser({}, result, function(success)
       if not success then
         vim.notify("Failed to replay request", vim.log.levels.ERROR, { title = "kulala" })
         return

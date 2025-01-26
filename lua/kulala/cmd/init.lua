@@ -79,16 +79,16 @@ M.run = function(cmd, callback)
 end
 
 ---Runs the parser and returns the result
-M.run_parser = function(req, callback)
+M.run_parser = function(requests, req, callback)
   local stats, errors
-  local verbose_mode = CONFIG.get().default_view == "verbose"
+  local verbose_mode = CONFIG.get().default_view == 'verbose'
 
   if process_prompt_vars(req) == false then
     Logger.warn("Prompt failed.")
     return
   end
 
-  local result = req.cmd ~= nil and req or PARSER.parse(req.start_line)
+  local result = req.cmd ~= nil and req or PARSER.parse(requests, req.start_line)
   local start = vim.loop.hrtime()
 
   vim.fn.jobstart(result.cmd, {
@@ -96,7 +96,7 @@ M.run_parser = function(req, callback)
       if callback then
         if datalist then
           errors = errors or {}
-          vim.list_extend(errors, datalist)
+          vim.list_extend(errors,  datalist)
         end
       end
     end,
@@ -150,10 +150,10 @@ M.run_parser = function(req, callback)
 end
 
 ---Runs the parser and returns the result
-M.run_parser_all = function(doc, callback)
-  local verbose_mode = CONFIG.get().default_view == "verbose"
+M.run_parser_all = function(requests, variables, callback)
+  local verbose_mode = CONFIG.get().default_view == 'verbose'
 
-  for _, req in ipairs(doc) do
+  for _, req in ipairs(requests) do
     offload_task(function()
       if process_prompt_vars(req) == false then
         if req.show_icon_line_number then
@@ -162,7 +162,10 @@ M.run_parser_all = function(doc, callback)
         Logger.warn("Prompt failed. Skipping this and all following requests.")
         return false
       end
-      local result = PARSER.parse(req.start_line)
+
+      local result = PARSER.parse(requests, req.start_line, variables)
+      if not result then return end
+
       local icon_linenr = result.show_icon_line_number
       if icon_linenr then
         INLAY:show_loading(icon_linenr)
@@ -171,8 +174,7 @@ M.run_parser_all = function(doc, callback)
       local success = false
       local errors
 
-      local stats = vim
-        .system(result.cmd, {
+      local stats = vim.system(result.cmd, {
           text = true,
           stderr = function(_, data)
             if data then
@@ -181,8 +183,7 @@ M.run_parser_all = function(doc, callback)
           end,
         }, function(data)
           success = data.code == 0
-        end)
-        :wait()
+        end):wait()
 
       if success then
         local body = Fs.read_file(GLOBALS.BODY_FILE)
