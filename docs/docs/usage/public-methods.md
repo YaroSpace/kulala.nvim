@@ -109,6 +109,7 @@ These files include:
 
 - last response body
 - last response headers
+- last response erorrs
 - last request data
 - global variables set via scripts
 - compiled pre- and post-request scripts
