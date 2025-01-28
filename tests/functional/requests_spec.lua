@@ -1,5 +1,6 @@
 local GLOBALS = require("kulala.globals")
 local CONFIG = require("kulala.config")
+local FS = require("kulala.utils.fs")
 local kulala = require("kulala")
 
 local h = require("test_helper.ui")
@@ -7,9 +8,9 @@ local s = require("test_helper.stubs")
 
 local assert = require("luassert")
 
-describe("kulala.ui", function()
+describe("requests", function()
   describe("show output of requests", function()
-    local curl, jobstart, system, fs
+    local curl, jobstart, system
     local result, expected, ui_buf
 
     before_each(function()
