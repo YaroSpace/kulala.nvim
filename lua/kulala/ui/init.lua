@@ -34,8 +34,8 @@ local open_float = function()
   local bufnr = vim.api.nvim_create_buf(false, false)
   vim.api.nvim_buf_set_name(bufnr, "kulala://ui")
 
-  local width = vim.api.nvim_win_get_width(0) - 10
-  local height = vim.api.nvim_win_get_height(0) - 10
+  local width = math.max(vim.api.nvim_win_get_width(0) - 10, 1)
+  local height = math.max(vim.api.nvim_win_get_height(0) - 10, 1)
 
   local winnr = vim.api.nvim_open_win(bufnr, true, {
     title = "Kulala",
@@ -246,7 +246,7 @@ M.open = function()
   INLAY.clear()
 
   vim.schedule(function()
-    local _, requests = PARSER.get_document()
+    local variables, requests = PARSER.get_document()
     local req = PARSER.get_request_at(requests)
     if req == nil then
       Logger.error("No request found")
@@ -255,7 +255,7 @@ M.open = function()
     if req.show_icon_line_number then
       INLAY:show_loading(req.show_icon_line_number)
     end
-    CMD.run_parser(requests, req, function(success, start)
+    CMD.run_parser(requests, req, variables, function(success, start)
       if not success then
         if req.show_icon_line_number then
           INLAY:show_error(req.show_icon_line_number)
@@ -270,6 +270,8 @@ M.open = function()
 
         open_default_view()
       end
+
+      return true
     end)
   end)
 end
@@ -281,7 +283,7 @@ M.open_all = function()
   local variables, requests = PARSER.get_document()
 
   if not requests then
-    return Logger.error("No requests found in the documents")
+    return Logger.error("No requests found in the document")
   end
 
   CMD.run_parser_all(requests, variables, function(success, start, icon_linenr)
@@ -299,6 +301,8 @@ M.open_all = function()
 
       open_default_view()
     end
+
+    return true
   end)
 end
 
@@ -482,7 +486,8 @@ M.replay = function()
     return
   end
   vim.schedule(function()
-    CMD.run_parser({}, result, function(success)
+    local variables, requests = PARSER.get_document()
+    CMD.run_parser(requests, result, variables, function(success)
       if not success then
         vim.notify("Failed to replay request", vim.log.levels.ERROR, { title = "kulala" })
         return
