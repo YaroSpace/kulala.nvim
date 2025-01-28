@@ -18,17 +18,22 @@ local function run_next_task()
   if #TASK_QUEUE > 0 then
     RUNNING_TASK = true
     local task = table.remove(TASK_QUEUE, 1)
+
     UV.new_timer():start(0, 0, function()
       vim.schedule(function()
-        local res = task.fn() -- Execute the task in the main thread
-        if res == false then
+        local status, res = pcall(task.fn)
+
+        local cb_status = true
+        if task.callback then
+          cb_status = pcall(task.callback) -- Execute the callback in the main thread
+        end
+
+        if not (status and res and cb_status) then
           RUNNING_TASK = false
           TASK_QUEUE = {} -- Clear the task queue and
           return
         end
-        if task.callback then
-          task.callback() -- Execute the callback in the main thread
-        end
+
         RUNNING_TASK = false
         run_next_task() -- Proceed to the next task in the queue
       end)
@@ -79,7 +84,7 @@ M.run = function(cmd, callback)
 end
 
 ---Runs the parser and returns the result
-M.run_parser = function(requests, req, callback)
+M.run_parser = function(requests, req, variables, callback)
   local stats, errors
   local verbose_mode = CONFIG.get().default_view == "verbose"
 
@@ -88,7 +93,7 @@ M.run_parser = function(requests, req, callback)
     return
   end
 
-  local result = req.cmd ~= nil and req or PARSER.parse(requests, req.start_line)
+  local result = req.cmd ~= nil and req or PARSER.parse(requests, variables, req.start_line)
   local start = vim.loop.hrtime()
 
   vim.fn.jobstart(result.cmd, {
@@ -139,6 +144,10 @@ M.run_parser = function(requests, req, callback)
         end
         Api.trigger("after_next_request")
         Api.trigger("after_request")
+      else
+        if errors then
+          Logger.error(errors)
+        end
       end
       Fs.delete_request_scripts_files()
       if callback then
@@ -153,6 +162,7 @@ M.run_parser_all = function(requests, variables, callback)
   local verbose_mode = CONFIG.get().default_view == "verbose"
 
   for _, req in ipairs(requests) do
+    LOG(RUNNING_TASK, #TASK_QUEUE)
     offload_task(function()
       if process_prompt_vars(req) == false then
         if req.show_icon_line_number then
@@ -162,9 +172,9 @@ M.run_parser_all = function(requests, variables, callback)
         return false
       end
 
-      local result = PARSER.parse(requests, req.start_line, variables)
+      local result = PARSER.parse(requests, variables, req.start_line)
       if not result then
-        return
+        return false
       end
 
       local icon_linenr = result.show_icon_line_number
@@ -215,6 +225,10 @@ M.run_parser_all = function(requests, variables, callback)
         PARSER.scripts.javascript.run("post_request", result.scripts.post_request)
         Api.trigger("after_next_request")
         Api.trigger("after_request")
+      else
+        if errors then
+          Logger.error(errors)
+        end
       end
       Fs.delete_request_scripts_files()
       if callback then

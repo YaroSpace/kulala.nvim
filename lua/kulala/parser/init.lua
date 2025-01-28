@@ -603,7 +603,7 @@ end
 ---Parse a request and return the request on itself, its headers and body
 ---@param start_request_linenr number|nil The line number where the request starts
 ---@return Request|nil -- Table containing the request data or nil if parsing fails
-M.parse = function(requests, start_request_linenr, document_variables)
+M.parse = function(requests, document_variables, start_request_linenr)
   if not requests then
     local get_document = CONFIG:get().treesitter and TS.get_document or M.get_document
     requests, document_variables = get_document()
