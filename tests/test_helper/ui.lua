@@ -48,16 +48,6 @@ h.to_table = function(str, clean)
     :totable()
 end
 
----@param fixture_name string
----@param table? boolean
----@return table|string
-h.load_fixture = function(fixture_name)
-  local fixtures_path = vim.uv.cwd() .. "/tests/ui/fixtures/"
-  local contents = vim.fn.readfile(fixtures_path .. fixture_name)
-
-  return h.to_string(contents, false)
-end
-
 UITestHelper.delete_all_bufs = function()
   -- Get a list of all buffer numbers
   local buffers = vim.api.nvim_list_bufs()

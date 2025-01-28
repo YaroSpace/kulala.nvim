@@ -1,11 +1,21 @@
 local fs = require("kulala.utils.fs")
 local h = require("test_helper.ui")
 
-local Curl = {}
-local Jobstart = { jobs = {} }
-local System = { code = 0, signal = 0, jobs = {} }
+local Curl = { paths = {} }
+local Jobstart = { id = "Jobstart", jobs = {} }
+local System = { id = "System", code = 0, signal = 0, jobs = {} }
 
 local Fs = { paths_mappings = {} }
+
+---@param fixture_name string
+---@param table? boolean
+---@return table|string
+h.load_fixture = function(fixture_name)
+  local fixtures_path = vim.uv.cwd() .. "/tests/functional/fixtures/"
+  local contents = vim.fn.readfile(fixtures_path .. fixture_name)
+
+  return h.to_string(contents, false)
+end
 
 ---@param paths_mappings table [path:content]
 function Fs:stub_read_file(paths_mappings)
@@ -46,10 +56,10 @@ end
 
 local function parse_curl_cmd(cmd)
   local curl_flags = {
-    ["-D"] = "headers",
-    ["-o"] = "body",
-    ["-w"] = "curl_format",
-    ["--cookie-jar"] = "cookies",
+    ["-D"] = "headers_path",
+    ["-o"] = "body_path",
+    ["-w"] = "curl_format_path",
+    ["--cookie-jar"] = "cookies_path",
   }
 
   local flags = {}
@@ -75,12 +85,17 @@ function Curl:request(job)
     return
   end
 
-  job.on_stdout = mappings.stats
-  job.on_stderr = mappings.errors
+  if job.id == "Jobstart" then
+    job.on_stdout = mappings.stats
+    job.on_stderr = mappings.errors
+  else
+    job.stderr = mappings.errors
+  end
 
   local curl_flags = parse_curl_cmd(cmd)
-  fs.write_file(curl_flags.headers, mappings.headers)
-  fs.write_file(curl_flags.body, mappings.body)
+  fs.write_file(curl_flags.headers_path, mappings.headers)
+  fs.write_file(curl_flags.body_path, mappings.body)
+  vim.list_extend(self.paths, { curl_flags.headers_path, curl_flags.body_path })
 
   self.requests_no = self.requests_no + 1
   vim.list_extend(self.requests, { url })
@@ -89,6 +104,10 @@ end
 function Curl:reset()
   self.requests_no = 0
   self.requests = {}
+
+  vim.iter(self.paths):each(function(path)
+    vim.uv.fs_unlink(path)
+  end)
 end
 
 function Jobstart:__call(cmd, opts)
@@ -176,21 +195,22 @@ function System:run(cmd, opts, on_exit)
 
   self.args = { cmd = cmd, opts = opts, on_exit = on_exit }
 
-  local stats = {
+  _ = self.on_call and self.on_call(self)
+
+  self.stats = {
     code = self.code,
     signal = self.signal,
     stderr = self.stderr,
     stdout = self.stdout,
   }
-  _ = self.on_call and self.on_call(self)
 
   _ = opts.stdout and opts.stdout(_, self.stdout)
   _ = opts.stderr and opts.stderr(_, self.stderr)
-  _ = on_exit and on_exit(stats)
+  _ = on_exit and on_exit(self.stats)
 
   System.jobs[self.job_id] = nil
 
-  return setmetatable(stats, self)
+  return setmetatable(self.stats, self)
 end
 
 function System:wait(timeout, predicate)
