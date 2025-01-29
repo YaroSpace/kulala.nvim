@@ -22,6 +22,9 @@ M.scripts.javascript = require("kulala.parser.scripts.javascript")
 ---@param env table -- The environment variables
 ---@param silent boolean|nil -- Whether to suppress not found variable warnings
 local function parse_string_variables(str, variables, env, silent)
+  if not str then
+    LOG.trace(variables)
+  end
   local function replace_placeholder(variable_name)
     local value
     -- If the variable name contains a `$` symbol then try to parse it as a dynamic variable
@@ -122,6 +125,11 @@ local function parse_body(body, variables, env, silent)
   end
   variables = variables or {}
   env = env or {}
+
+  if body:find("DEFAULT_TIMEOUT") then
+    LOG(body, variables, tostring(DB.update()))
+    LOG.clean(env)
+  end
   return parse_string_variables(body, variables, env, silent)
 end
 
@@ -489,6 +497,7 @@ local function extend_document_variables(document_variables, request)
       end
     end
   end
+  LOG("document_variables: ", document_variables)
   return document_variables
 end
 
@@ -593,6 +602,7 @@ end
 ---@param silent boolean -- Whether to suppress not found variable warnings
 ---@return string, table, string|nil, string|nil -- The URL, headers, body and body_display with variables replaced
 local replace_variables_in_url_headers_body = function(res, document_variables, env, silent)
+  LOG(res.url_raw)
   local url = parse_url(res.url_raw, document_variables, env, silent)
   local headers = parse_headers(res.headers, document_variables, env, silent)
   local body = parse_body(res.body_raw, document_variables, env, silent)
@@ -601,13 +611,12 @@ local replace_variables_in_url_headers_body = function(res, document_variables, 
 end
 
 ---Parse a request and return the request on itself, its headers and body
+---@param requests table Parsed documents requests
+---@param document_variables table Parsed document variables
 ---@param start_request_linenr number|nil The line number where the request starts
 ---@return Request|nil -- Table containing the request data or nil if parsing fails
 M.parse = function(requests, document_variables, start_request_linenr)
-  if not requests then
-    local get_document = CONFIG:get().treesitter and TS.get_document or M.get_document
-    requests, document_variables = get_document()
-  end
+  document_variables, requests = M.get_document()
 
   local res = M.get_basic_request_data(requests, start_request_linenr)
 

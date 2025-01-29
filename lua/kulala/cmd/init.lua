@@ -25,12 +25,14 @@ local function run_next_task()
 
         local cb_status = true
         if task.callback then
-          cb_status = pcall(task.callback) -- Execute the callback in the main thread
+          cb_status, res = pcall(task.callback) -- Execute the callback in the main thread
         end
 
         if not (status and res and cb_status) then
-          RUNNING_TASK = false
           TASK_QUEUE = {} -- Clear the task queue and
+          RUNNING_TASK = false
+
+          Logger.error(("Errors running a scheduled task: %s"):format(res))
           return
         end
 
@@ -145,9 +147,7 @@ M.run_parser = function(requests, req, variables, callback)
         Api.trigger("after_next_request")
         Api.trigger("after_request")
       else
-        if errors then
-          Logger.error(errors)
-        end
+        Logger.error(("Errors in request %s at line: %s\n"):format(req.url, req.start_line, table.concat(errors, "\n")))
       end
       Fs.delete_request_scripts_files()
       if callback then
@@ -162,7 +162,6 @@ M.run_parser_all = function(requests, variables, callback)
   local verbose_mode = CONFIG.get().default_view == "verbose"
 
   for _, req in ipairs(requests) do
-    LOG(RUNNING_TASK, #TASK_QUEUE)
     offload_task(function()
       if process_prompt_vars(req) == false then
         if req.show_icon_line_number then
@@ -227,7 +226,7 @@ M.run_parser_all = function(requests, variables, callback)
         Api.trigger("after_request")
       else
         if errors then
-          Logger.error(errors)
+          Logger.error(("Errors in request %s at line: %s\n"):format(req.url, req.start_line, errors))
         end
       end
       Fs.delete_request_scripts_files()
