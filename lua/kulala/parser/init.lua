@@ -16,15 +16,17 @@ local Logger = require("kulala.logger")
 
 M.scripts.javascript = require("kulala.parser.scripts.javascript")
 
+local function get_current_line_number()
+  local win_id = vim.fn.bufwinid(DB.current_buffer)
+  return vim.api.nvim_win_get_cursor(win_id)[1]
+end
+
 ---Parse the variables in a string
 ---@param str string -- The string to parse
 ---@param variables table -- The variables defined in the document
 ---@param env table -- The environment variables
 ---@param silent boolean|nil -- Whether to suppress not found variable warnings
 local function parse_string_variables(str, variables, env, silent)
-  if not str then
-    LOG.trace(variables)
-  end
   local function replace_placeholder(variable_name)
     local value
     -- If the variable name contains a `$` symbol then try to parse it as a dynamic variable
@@ -50,6 +52,9 @@ local function parse_string_variables(str, variables, env, silent)
       end
     end
     return value
+  end
+  if not str then
+    LOG.trace()
   end
   local result = str:gsub("{{(.-)}}", replace_placeholder)
   return result
@@ -126,10 +131,6 @@ local function parse_body(body, variables, env, silent)
   variables = variables or {}
   env = env or {}
 
-  if body:find("DEFAULT_TIMEOUT") then
-    LOG(body, variables, tostring(DB.update()))
-    LOG.clean(env)
-  end
   return parse_string_variables(body, variables, env, silent)
 end
 
@@ -175,16 +176,16 @@ local function split_by_block_delimiters(text)
 end
 
 local function get_request_from_fenced_code_block()
-  local cursor_pos = vim.api.nvim_win_get_cursor(0)
-  local start_line = cursor_pos[1]
+  local buf = DB.current_buffer
+  local start_line = get_current_line_number()
 
   -- Get the total number of lines in the current buffer
-  local total_lines = vim.api.nvim_buf_line_count(0)
+  local total_lines = vim.api.nvim_buf_line_count(buf)
 
   -- Search for the start of the fenced code block (``` or similar)
   local block_start = nil
   for i = start_line, 1, -1 do
-    local line = vim.api.nvim_buf_get_lines(0, i - 1, i, false)[1]
+    local line = vim.api.nvim_buf_get_lines(buf, i - 1, i, false)[1]
     if line:match("^%s*```") then
       block_start = i
       break
@@ -199,7 +200,7 @@ local function get_request_from_fenced_code_block()
   -- Search for the end of the fenced code block
   local block_end = nil
   for i = start_line, total_lines do
-    local line = vim.api.nvim_buf_get_lines(0, i - 1, i, false)[1]
+    local line = vim.api.nvim_buf_get_lines(buf, i - 1, i, false)[1]
     if line:match("^%s*```") then
       block_end = i
       break
@@ -211,7 +212,7 @@ local function get_request_from_fenced_code_block()
     return nil, nil
   end
 
-  return vim.api.nvim_buf_get_lines(0, block_start, block_end - 1, false), block_start
+  return vim.api.nvim_buf_get_lines(buf, block_start, block_end - 1, false), block_start
 end
 
 M.get_document = function()
@@ -227,7 +228,7 @@ M.get_document = function()
   if maybe_from_fenced_code_block then
     content_lines, line_offset = get_request_from_fenced_code_block()
   else
-    content_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    content_lines = vim.api.nvim_buf_get_lines(DB.current_buffer, 0, -1, false)
     line_offset = 0
   end
 
@@ -436,7 +437,7 @@ M.get_request_at = function(requests, linenr)
     return nil
   end
   if linenr == nil then
-    linenr = vim.api.nvim_win_get_cursor(0)[1]
+    linenr = get_current_line_number()
   end
   if CONFIG.get().treesitter then
     return TS.get_request_at(linenr - 1)
@@ -450,8 +451,8 @@ M.get_request_at = function(requests, linenr)
 end
 
 M.get_previous_request = function(requests)
-  local cursor_pos = vim.api.nvim_win_get_cursor(0) -- {line, col}
-  local cursor_line = cursor_pos[1]
+  local cursor_line = get_current_line_number()
+
   for i, request in ipairs(requests) do
     if cursor_line >= request.start_line and cursor_line <= request.end_line then
       if i > 1 then
@@ -463,8 +464,8 @@ M.get_previous_request = function(requests)
 end
 
 M.get_next_request = function(requests)
-  local cursor_pos = vim.api.nvim_win_get_cursor(0) -- {line, col}
-  local cursor_line = cursor_pos[1]
+  local cursor_line = get_current_line_number()
+
   for i, request in ipairs(requests) do
     if cursor_line >= request.start_line and cursor_line <= request.end_line then
       if i < #requests then
@@ -497,7 +498,6 @@ local function extend_document_variables(document_variables, request)
       end
     end
   end
-  LOG("document_variables: ", document_variables)
   return document_variables
 end
 
@@ -602,7 +602,6 @@ end
 ---@param silent boolean -- Whether to suppress not found variable warnings
 ---@return string, table, string|nil, string|nil -- The URL, headers, body and body_display with variables replaced
 local replace_variables_in_url_headers_body = function(res, document_variables, env, silent)
-  LOG(res.url_raw)
   local url = parse_url(res.url_raw, document_variables, env, silent)
   local headers = parse_headers(res.headers, document_variables, env, silent)
   local body = parse_body(res.body_raw, document_variables, env, silent)
@@ -616,11 +615,9 @@ end
 ---@param start_request_linenr number|nil The line number where the request starts
 ---@return Request|nil -- Table containing the request data or nil if parsing fails
 M.parse = function(requests, document_variables, start_request_linenr)
-  document_variables, requests = M.get_document()
-
   local res = M.get_basic_request_data(requests, start_request_linenr)
 
-  if res == nil then
+  if not res or not res.url_raw then
     return nil
   end
 

@@ -34,8 +34,8 @@ local open_float = function()
   local bufnr = vim.api.nvim_create_buf(false, false)
   vim.api.nvim_buf_set_name(bufnr, "kulala://ui")
 
-  local width = vim.api.nvim_win_get_width(0) - 10
-  local height = vim.api.nvim_win_get_height(0) - 10
+  local width = math.max(vim.api.nvim_win_get_width(0) - 10, 1)
+  local height = math.max(vim.api.nvim_win_get_height(0) - 10, 1)
 
   local winnr = vim.api.nvim_open_win(bufnr, true, {
     title = "Kulala",
@@ -270,6 +270,8 @@ M.open = function()
 
         open_default_view()
       end
+
+      return true
     end)
   end)
 end
@@ -299,6 +301,8 @@ M.open_all = function()
 
       open_default_view()
     end
+
+    return true
   end)
 end
 

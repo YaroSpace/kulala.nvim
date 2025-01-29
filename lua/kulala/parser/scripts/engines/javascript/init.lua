@@ -52,35 +52,39 @@ end
 local generate_one = function(script_type, is_external_file, script_data)
   local userscript
   local base_file_path = FILE_MAPPING[script_type]
+
   if base_file_path == nil then
     return nil, nil
   end
+
   local base_file = FS.read_file(base_file_path)
   if base_file == nil then
     return nil, nil
   end
+
   local script_cwd
-  -- buf_dir is "kulala:" when the buffer is scratch buffer
-  -- in this case, use current working directory for script_cwd and base_dir
   local buf_dir = FS.get_current_buffer_dir()
 
   if is_external_file then
     -- if script_data starts with ./ or ../, it is a relative path
     if string.match(script_data, "^%./") or string.match(script_data, "^%../") then
       local local_script_path = script_data:gsub("^%./", "")
-      local base_dir = buf_dir == "kulala:" and vim.loop.cwd() or buf_dir
-      script_data = FS.join_paths(base_dir, local_script_path)
+      script_data = FS.join_paths(buf_dir, local_script_path)
     end
-    script_cwd = buf_dir == "kulala:" and vim.loop.cwd() or FS.get_dir_by_filepath(script_data)
+
+    script_cwd = FS.get_dir_by_filepath(script_data)
     userscript = FS.read_file(script_data)
   else
-    script_cwd = buf_dir == "kulala:" and vim.loop.cwd() or buf_dir
+    script_cwd = buf_dir
     userscript = vim.fn.join(script_data, "\n")
   end
+
   base_file = base_file .. "\n" .. userscript
+
   local uuid = FS.get_uuid()
   local script_path = FS.join_paths(REQUEST_SCRIPTS_DIR, uuid .. ".js")
   FS.write_file(script_path, base_file, false)
+
   return script_path, script_cwd
 end
 

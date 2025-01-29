@@ -23,7 +23,7 @@ local function run_next_task()
       vim.schedule(function()
         local status, res = pcall(task.fn)
 
-        local cb_status = true
+        local cb_status, cb_res = true, ""
         if task.callback then
           cb_status, res = pcall(task.callback) -- Execute the callback in the main thread
         end
@@ -90,12 +90,19 @@ M.run_parser = function(requests, req, variables, callback)
   local stats, errors
   local verbose_mode = CONFIG.get().default_view == "verbose"
 
+  Fs.clear_cached_files(true)
+
   if process_prompt_vars(req) == false then
     Logger.warn("Prompt failed.")
     return
   end
 
-  local result = req.cmd ~= nil and req or PARSER.parse(requests, variables, req.start_line)
+  local result = PARSER.parse(requests, variables, req.start_line)
+  if not result then
+    Logger.warn(("Request at line: %s could not be parsed"):format(req.start_line))
+    return false
+  end
+
   local start = vim.loop.hrtime()
 
   vim.fn.jobstart(result.cmd, {
@@ -147,11 +154,13 @@ M.run_parser = function(requests, req, variables, callback)
         Api.trigger("after_next_request")
         Api.trigger("after_request")
       else
-        Logger.error(("Errors in request %s at line: %s\n"):format(req.url, req.start_line, table.concat(errors, "\n")))
+        Logger.error(
+          ("Errors in request %s at line: %s\n%s"):format(req.url, req.start_line, table.concat(errors, "\n"))
+        )
       end
       Fs.delete_request_scripts_files()
       if callback then
-        callback(success, start)
+        return callback(success, start)
       end
     end,
   })
@@ -160,6 +169,8 @@ end
 ---Runs the parser and returns the result
 M.run_parser_all = function(requests, variables, callback)
   local verbose_mode = CONFIG.get().default_view == "verbose"
+
+  Fs.clear_cached_files(true)
 
   for _, req in ipairs(requests) do
     offload_task(function()
@@ -173,6 +184,7 @@ M.run_parser_all = function(requests, variables, callback)
 
       local result = PARSER.parse(requests, variables, req.start_line)
       if not result then
+        Logger.warn(("Request at line: %s could not be parsed"):format(req.start_line))
         return false
       end
 
@@ -226,13 +238,16 @@ M.run_parser_all = function(requests, variables, callback)
         Api.trigger("after_request")
       else
         if errors then
-          Logger.error(("Errors in request %s at line: %s\n"):format(req.url, req.start_line, errors))
+          Logger.error(("Errors in request %s at line: %s\n%s"):format(req.url, req.start_line, errors))
         end
       end
+
       Fs.delete_request_scripts_files()
+
       if callback then
-        callback(success, start, icon_linenr)
+        return callback(success, start, icon_linenr)
       end
+
       return true
     end)
   end

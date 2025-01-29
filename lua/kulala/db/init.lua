@@ -4,6 +4,7 @@ local M = {}
 
 M.data = nil
 M.global_data = {}
+M.current_buffer = nil
 
 local function default_data()
   return {
@@ -25,8 +26,8 @@ end
 
 local function load_data()
   if CONFIG.get().environment_scope == "b" then
-    local status, buf_data = pcall(vim.api.nvim_buf_get_var, M.current_buffer, "kulala_data")
-    M.data = status and buf_data or default_data()
+    local kulala_data = vim.b[M.current_buffer].kulala_data
+    M.data = kulala_data and kulala_data or default_data()
   elseif CONFIG.get().environment_scope == "g" then
     -- keep in lua only
     if not M.data then
@@ -39,7 +40,7 @@ end
 local function save_data()
   if CONFIG.get().environment_scope == "b" then
     if vim.fn.bufexists(M.data.scope_nr) > 0 then
-      vim.api.nvim_buf_set_var(M.data.scope_nr, "kulala_data", M.data)
+      vim.b[M.data.scope_nr].kulala_data = M.data
     end
   elseif CONFIG.get().environment_scope == "g" then
     -- keep in lua only
@@ -64,16 +65,6 @@ M.find_many = function()
   elseif M.data.scope_nr ~= get_current_scope_nr() then
     save_data()
     load_data()
-  end
-  if
-    false
-    and M.data
-    and M.data.current_request
-    and M.data.current_request.show_icon_line_number < 40
-    and #require("kulala.cmd").tasks > 0
-  then
-    LOG.clean(M.data.current_request.environment)
-    -- LOG(M.data.current_request.show_icon_line_number)
   end
   return M.data
 end
