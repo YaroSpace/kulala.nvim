@@ -16,6 +16,6 @@
     "foo": "bar"
   },
   "origin": "77.231.37.125",
-  "url": "https://httpbin.org/post"
+  "url": "https://httpbin.org/simple"
 }
 

@@ -283,7 +283,7 @@ M.open_all = function()
   local variables, requests = PARSER.get_document()
 
   if not requests then
-    return Logger.error("No requests found in the documents")
+    return Logger.error("No requests found in the document")
   end
 
   CMD.run_parser_all(requests, variables, function(success, start, icon_linenr)

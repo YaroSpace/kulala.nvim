@@ -32,7 +32,7 @@ local function run_next_task()
           TASK_QUEUE = {} -- Clear the task queue and
           RUNNING_TASK = false
 
-          Logger.error(("Errors running a scheduled task: %s"):format(res))
+          Logger.error(("Errors running a scheduled task: %s"):format(res or ""))
           return
         end
 
@@ -237,9 +237,7 @@ M.run_parser_all = function(requests, variables, callback)
         Api.trigger("after_next_request")
         Api.trigger("after_request")
       else
-        if errors then
-          Logger.error(("Errors in request %s at line: %s\n%s"):format(req.url, req.start_line, errors))
-        end
+        Logger.error(("Errors in request %s at line: %s\n%s"):format(req.url, req.start_line, errors or ""))
       end
 
       Fs.delete_request_scripts_files()
