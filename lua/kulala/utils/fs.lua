@@ -110,7 +110,7 @@ M.copy_file = function(source, destination)
   return vim.loop.fs_copyfile(source, destination, 0)
 end
 
----Get the current buffer directory or current working dir if buffer does not have a path
+---Get the current buffer directory or current working dir if path is not valid
 ---@return string
 M.get_current_buffer_dir = function()
   -- Get the full path of the current buffer

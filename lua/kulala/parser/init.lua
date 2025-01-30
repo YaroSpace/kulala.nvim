@@ -53,9 +53,6 @@ local function parse_string_variables(str, variables, env, silent)
     end
     return value
   end
-  if not str then
-    LOG.trace()
-  end
   local result = str:gsub("{{(.-)}}", replace_placeholder)
   return result
 end

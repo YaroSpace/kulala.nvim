@@ -1,0 +1,63 @@
+{
+  current_request = {
+    body = '{\r\n  "foo": "bar"\r\n}',
+    body_computed = '{\r\n  "foo": "bar"\r\n}',
+    body_display = '{\r\n  "foo": "bar"\r\n}',
+    body_raw = '{\r\n  "foo": "bar"\r\n}',
+    headers = {
+      Accept = "application/json",
+      Authorization = "Bearer Foo:bar=baz",
+      ["Content-Type"] = "application/json",
+    },
+    headers_display = {
+      Accept = "application/json",
+      Authorization = "Bearer Foo:bar=baz",
+      ["Content-Type"] = "application/json",
+    },
+    headers_raw = {
+      Accept = "application/json",
+      Authorization = "Bearer {{BASIC_TEST_TOKEN}}",
+      ["Content-Type"] = "application/json",
+    },
+    http_version = "1.1",
+    metadata = {},
+    method = "POST",
+    redirect_response_body_to_files = {},
+    scripts = {
+      post_request = {
+        files = {},
+        inline = {},
+      },
+      pre_request = {
+        files = {},
+        inline = {},
+      },
+    },
+    show_icon_line_number = 5,
+    url = "https://httpbin.org/post",
+    url_raw = "{{SCHEMA_FOO}}://{{URL_ENDPOINT}}",
+  },
+  env = {},
+  http_client_env = {
+    ["$schema"] = "https://raw.githubusercontent.com/mistweaverco/kulala.nvim/main/schemas/http-client.env.schema.json",
+    dev = {
+      PASSWORD = "bananas",
+      USERNAME = "gorillamoe",
+      auth_header = "Authorization: Basic Base64encodedstring==",
+      pokemon = "ditto",
+    },
+    prod = {
+      PASSWORD = "polo",
+      USERNAME = "marco",
+      auth_header = "Authorization: Basic Base64encodedstring==",
+      pokemon = "pikachu",
+    },
+  },
+  http_client_env_shared = {
+    ["$default_headers"] = {
+      Accept = "application/json",
+      ["Content-Type"] = "application/json",
+    },
+    DEFAULT_TIMEOUT = 1,
+  },
+}
