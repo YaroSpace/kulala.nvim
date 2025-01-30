@@ -7,16 +7,6 @@ local System = { id = "System", code = 0, signal = 0, jobs = {} }
 
 local Fs = { paths_mappings = {} }
 
----@param fixture_name string
----@param table? boolean
----@return table|string
-h.load_fixture = function(fixture_name)
-  local fixtures_path = vim.uv.cwd() .. "/tests/functional/fixtures/"
-  local contents = vim.fn.readfile(fixtures_path .. fixture_name)
-
-  return h.to_string(contents, false)
-end
-
 ---@param paths_mappings table [path:content]
 function Fs:stub_read_file(paths_mappings)
   Fs._read_file = Fs._read_file and Fs._read_file or fs.read_file
@@ -46,6 +36,7 @@ function Fs.file_exists(path)
 end
 
 function Curl:stub(opts)
+  self:reset()
   self = vim.tbl_extend("force", self, {
     url_mappings = opts,
     requests = {},
@@ -79,7 +70,7 @@ end
 function Curl:request(job)
   local cmd = job.args.cmd
   local url = cmd[#cmd]
-  local mappings = vim.tbl_extend("force", self.url_mappings["*"], self.url_mappings[url])
+  local mappings = vim.tbl_extend("force", self.url_mappings["*"] or {}, self.url_mappings[url] or {})
 
   if not mappings then
     return
@@ -93,8 +84,8 @@ function Curl:request(job)
   end
 
   local curl_flags = parse_curl_cmd(cmd)
-  fs.write_file(curl_flags.headers_path, mappings.headers)
-  fs.write_file(curl_flags.body_path, mappings.body)
+  _ = mappings.headers and fs.write_file(curl_flags.headers_path, mappings.headers)
+  _ = mappings.body and fs.write_file(curl_flags.body_path, mappings.body)
   vim.list_extend(self.paths, { curl_flags.headers_path, curl_flags.body_path })
 
   self.requests_no = self.requests_no + 1
@@ -121,7 +112,6 @@ function Jobstart:stub(cmd, opts)
   vim.fn.jobstart = self
 
   self.job_id = "job_id_" .. tostring(math.random(10000))
-  Jobstart.jobs[self.job_id] = true
 
   return setmetatable(self, Jobstart)
 end
@@ -138,12 +128,13 @@ local function job_cmd_match(cmd, cmd_stub)
 end
 
 function Jobstart:run(cmd, opts)
+  self.args = { cmd = cmd, opts = opts }
+
   if not job_cmd_match(cmd, self.cmd) then
-    Jobstart._jobstart(cmd, opts)
-    return
+    return Jobstart._jobstart(cmd, opts)
   end
 
-  self.args = { cmd = cmd, opts = opts }
+  Jobstart.jobs[self.job_id] = true
 
   _ = self.on_call and self.on_call(self)
 
@@ -177,7 +168,6 @@ function System:stub(cmd, opts, on_exit)
   vim.system = self
 
   self.job_id = "job_id_" .. tostring(math.random(10000))
-  System.jobs[self.job_id] = true
 
   return setmetatable(self, System)
 end
@@ -188,12 +178,13 @@ function System:reset()
 end
 
 function System:run(cmd, opts, on_exit)
+  self.args = { cmd = cmd, opts = opts, on_exit = on_exit }
+
   if not job_cmd_match(cmd, self.cmd) then
-    System._system(cmd, opts, on_exit)
-    return
+    return System._system(cmd, opts, on_exit)
   end
 
-  self.args = { cmd = cmd, opts = opts, on_exit = on_exit }
+  System.jobs[self.job_id] = true
 
   _ = self.on_call and self.on_call(self)
 

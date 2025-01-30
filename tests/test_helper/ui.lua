@@ -27,6 +27,10 @@ string.to_table = function(self, clean)
   return h.to_table(tostring(self), clean)
 end
 
+string.to_object = function(str)
+  return loadstring("return " .. str)()
+end
+
 ---@param tbl string[]|string
 h.to_string = function(tbl, clean)
   tbl = tbl or {}
@@ -46,6 +50,31 @@ h.to_table = function(str, clean)
       return clean and line:clean() or line
     end)
     :totable()
+end
+
+UITestHelper.expand_path = function(path)
+  if vim.fn.filereadable(path) == 0 then
+    local spec_path
+
+    for i = 1, 5 do
+      spec_path = debug.getinfo(i).short_src
+      if spec_path and spec_path:find("_spec%.lua") then
+        break
+      end
+    end
+
+    spec_path = vim.fn.fnamemodify(spec_path, ":h")
+    path = vim.uv.cwd() .. "/" .. spec_path .. "/" .. path
+  end
+
+  return path
+end
+
+---@param fixture_path string
+---@return table|string
+UITestHelper.load_fixture = function(fixture_path)
+  local contents = vim.fn.readfile(h.expand_path(fixture_path))
+  return h.to_string(contents, false)
 end
 
 UITestHelper.delete_all_bufs = function()
@@ -111,7 +140,7 @@ end
 ---@return table [id:name]
 UITestHelper.list_loaded_buf_names = function()
   return vim.iter(vim.api.nvim_list_bufs()):fold({}, function(acc, id)
-    acc[id] = vim.fn.bufname(id)
+    acc[tostring(id)] = vim.fn.bufname(id)
     return acc
   end)
 end
