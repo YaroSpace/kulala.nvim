@@ -28,7 +28,7 @@ string.to_table = function(self, clean)
 end
 
 string.to_object = function(str)
-  return loadstring("return " .. str)()
+  return loadstring("return " .. str:gsub("[\n\r]*", ""))()
 end
 
 ---@param tbl string[]|string

@@ -21,18 +21,18 @@ local function run_next_task()
 
     UV.new_timer():start(0, 0, function()
       vim.schedule(function()
-        local status, res = pcall(task.fn)
+        local status, res = xpcall(task.fn, debug.traceback)
 
         local cb_status, cb_res = true, ""
         if task.callback then
-          cb_status, res = pcall(task.callback) -- Execute the callback in the main thread
+          cb_status, res = xpcall(task.callback, debug.traceback) -- Execute the callback in the main thread
         end
 
         if not (status and res and cb_status) then
           TASK_QUEUE = {} -- Clear the task queue and
           RUNNING_TASK = false
 
-          Logger.error(("Errors running a scheduled task: %s"):format(res or ""))
+          Logger.error(("Errors running a scheduled task: %s %s"):format(res or "", cb_res or ""))
           return
         end
 

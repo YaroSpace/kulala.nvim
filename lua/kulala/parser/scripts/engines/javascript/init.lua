@@ -23,7 +23,14 @@ local FILE_MAPPING = {
   post_request = BASE_FILE_POST,
 }
 
-M.install = function()
+M.install_dependencies = function()
+  if FS.file_exists(BASE_FILE_PRE) and FS.file_exists(BASE_FILE_POST) then
+    return
+  end
+
+  Logger.warn("Javascript base files not found.")
+  Logger.info("Installing Javascript dependencies...")
+
   FS.copy_dir(BASE_DIR, SCRIPTS_BUILD_DIR)
   local res_install = vim.system({ NPM_BIN, "install", "--prefix", SCRIPTS_BUILD_DIR }):wait()
   if res_install.code ~= 0 then
@@ -128,10 +135,7 @@ M.run = function(type, data)
     return
   end
 
-  if not FS.file_exists(BASE_FILE_PRE) or not FS.file_exists(BASE_FILE_POST) then
-    Logger.warn("Javascript base files not found. Installing dependencies...")
-    M.install()
-  end
+  M.install_dependencies()
 
   local scripts = generate_all(type, data)
   if #scripts == 0 then
@@ -156,7 +160,7 @@ M.run = function(type, data)
 
       if output.stderr ~= nil and not string.match(output.stderr, "^%s*$") then
         if not CONFIG.get().disable_script_print_output then
-          vim.print(output.stderr)
+          Logger.error(output.stderr)
         end
         if type == "pre_request" then
           FS.write_file(GLOBALS.SCRIPT_PRE_OUTPUT_FILE, output.stderr)
@@ -166,7 +170,7 @@ M.run = function(type, data)
       end
       if output.stdout ~= nil and not string.match(output.stdout, "^%s*$") then
         if not CONFIG.get().disable_script_print_output then
-          vim.print(output.stdout)
+          Logger.info(output.stdout)
         end
         if type == "pre_request" then
           if not FS.write_file(GLOBALS.SCRIPT_PRE_OUTPUT_FILE, output.stdout) then

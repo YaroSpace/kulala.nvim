@@ -1,4 +1,5 @@
 local fs = require("kulala.utils.fs")
+local dynamic_vars = require("kulala.parser.dynamic_vars")
 local h = require("test_helper.ui")
 
 local Curl = { url_mappings = {}, paths = {}, requests = {}, requests_no = 0 }
@@ -18,6 +19,62 @@ setmetatable(System, {
 })
 
 local Fs = { paths_mappings = {} }
+
+local function var(val)
+  return function()
+    return val
+  end
+end
+
+local Dynamic_vars = {
+  ["$date"] = var("date"),
+  ["$randomInt"] = var("randomInt"),
+  ["$timestamp"] = var("$TIMESTAMP"),
+  ["$uuid"] = var("uuid"),
+}
+
+Dynamic_vars.retrieve_all = function()
+  return Dynamic_vars
+end
+
+Dynamic_vars.stub = function()
+  Dynamic_vars._retrieve_all = dynamic_vars.retrieve_all
+  dynamic_vars.retrieve_all = Dynamic_vars.retrieve_all
+  return Dynamic_vars
+end
+
+Dynamic_vars.reset = function()
+  dynamic_vars.retrieve_all = Dynamic_vars._retrieve_all
+end
+
+local Notify = { messages = {} }
+setmetatable(Notify, {
+  __call = function(_, ...)
+    return Notify.run(...)
+  end,
+})
+
+Notify.stub = function()
+  Notify._notify = vim.notify
+  vim.notify = Notify
+  return Notify
+end
+
+Notify.run = function(message, level, opts)
+  vim.list_extend(Notify.messages, { message })
+  Notify._notify(message, level, opts)
+end
+
+Notify.has_message = function(message)
+  return vim.iter(Notify.messages):any(function(m)
+    return m:find(message)
+  end)
+end
+
+Notify.reset = function()
+  vim.notify = Notify._notify
+  Notify.messages = {}
+end
 
 ---@param paths_mappings table [path:content]
 function Fs:stub_read_file(paths_mappings)
@@ -217,4 +274,6 @@ return {
   Jobstart = Jobstart,
   System = System,
   Fs = Fs,
+  Notify = Notify,
+  Dynamic_vars = Dynamic_vars,
 }
