@@ -1,6 +1,7 @@
 local GLOBALS = require("kulala.globals")
 local Fs = require("kulala.utils.fs")
-local PARSER = require("kulala.parser")
+local DOCUMENT_PARSER = require("kulala.parser.document")
+local REQUEST_PARSER = require("kulala.parser.request")
 local EXT_PROCESSING = require("kulala.external_processing")
 local INT_PROCESSING = require("kulala.internal_processing")
 local Api = require("kulala.api")
@@ -46,16 +47,12 @@ end
 local function offload_task(fn, callback)
   table.insert(TASK_QUEUE, { fn = fn, callback = callback })
   -- If no task is currently running, start processing
-  if not RUNNING_TASK then
-    run_next_task()
-  end
+  if not RUNNING_TASK then run_next_task() end
 end
 
 local function process_prompt_vars(res)
   for _, metadata in ipairs(res.metadata) do
-    if metadata.name == "prompt" and not INT_PROCESSING.prompt_var(metadata.value) then
-      return false
-    end
+    if metadata.name == "prompt" and not INT_PROCESSING.prompt_var(metadata.value) then return false end
   end
 
   return true
@@ -90,7 +87,7 @@ local function process_internal(result)
 end
 
 local function process_external(result)
-  PARSER.scripts.javascript.run("post_request", result.scripts.post_request)
+  REQUEST_PARSER.scripts.javascript.run("post_request", result.scripts.post_request)
   Fs.delete_request_scripts_files()
 end
 
@@ -134,7 +131,7 @@ local function process_request(requests, request, variables, callback)
       return
     end
 
-    local parsed_request = PARSER.parse(requests, variables, request.start_line)
+    local parsed_request = REQUEST_PARSER.parse(requests, variables, request.start_line)
     if not parsed_request then
       Logger.warn(("Request at line: %s could not be parsed"):format(request.start_line))
       return
@@ -169,9 +166,7 @@ local function process_request(requests, request, variables, callback)
       end)
     end)
 
-    if not unbuffered then
-      request_job:wait()
-    end
+    if not unbuffered then request_job:wait() end
 
     return true
   end)
@@ -190,18 +185,14 @@ M.run_parser = function(requests, line_nr, callback)
   Fs.clear_cached_files(true)
 
   if not requests then
-    variables, requests = PARSER.get_document()
+    variables, requests = DOCUMENT_PARSER.get_document()
   end
 
-  if not requests then
-    return Logger.error("No requests found in the document")
-  end
+  if not requests then return Logger.error("No requests found in the document") end
 
   if line_nr and line_nr > 0 then
-    local request = PARSER.get_request_at(requests, line_nr)
-    if not request then
-      return Logger.error("No request found at current line")
-    end
+    local request = DOCUMENT_PARSER.get_request_at(requests, line_nr)
+    if not request then return Logger.error("No request found at current line") end
 
     reqs_to_process = { request }
   end
@@ -209,23 +200,11 @@ M.run_parser = function(requests, line_nr, callback)
   reqs_to_process = reqs_to_process or requests
 
   for _, req in ipairs(reqs_to_process) do
-    --- create namespace
-    local ns = vim.api.nvim_create_namespace("kulala_requests_flash")
     INLAY:show_loading(req.show_icon_line_number)
-    if req.start_line and req.end_line then
-      UiHighlight.highlight_range(
-        0,
-        { row = req.start_line, col = 0 },
-        { row = req.end_line, col = 0 },
-        ns,
-        100,
-        function()
-          process_request(requests, req, variables, callback)
-        end
-      )
-    else
+
+    UiHighlight.highlight_request(req, function()
       process_request(requests, req, variables, callback)
-    end
+    end)
   end
 end
 
