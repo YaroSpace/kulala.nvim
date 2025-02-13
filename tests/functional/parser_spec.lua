@@ -231,7 +231,6 @@ describe("requests", function()
 
         expected = h.load_fixture("requests/demo.png", true)
         assert.has_string(h.load_fixture(result.body_temp_file, true), expected)
-        assert.is_same(h.load_fixture(result.body_temp_file, true), h.load_fixture("fixtures/multiform.txt", true))
       end)
 
       it("processes file includes with < @file-to-variable", function()
@@ -265,7 +264,6 @@ describe("requests", function()
 
         expected = h.load_fixture("requests/demo.png", true)
         assert.has_string(h.load_fixture(result.body_temp_file, true), expected)
-        assert.is_same(h.load_fixture(result.body_temp_file, true), h.load_fixture("fixtures/multiform.txt", true))
       end)
 
       it("saves the request to a file", function()

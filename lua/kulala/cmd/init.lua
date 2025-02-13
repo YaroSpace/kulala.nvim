@@ -47,12 +47,16 @@ end
 local function offload_task(fn, callback)
   table.insert(TASK_QUEUE, { fn = fn, callback = callback })
   -- If no task is currently running, start processing
-  if not RUNNING_TASK then run_next_task() end
+  if not RUNNING_TASK then
+    run_next_task()
+  end
 end
 
 local function process_prompt_vars(res)
   for _, metadata in ipairs(res.metadata) do
-    if metadata.name == "prompt" and not INT_PROCESSING.prompt_var(metadata.value) then return false end
+    if metadata.name == "prompt" and not INT_PROCESSING.prompt_var(metadata.value) then
+      return false
+    end
   end
 
   return true
@@ -166,7 +170,9 @@ local function process_request(requests, request, variables, callback)
       end)
     end)
 
-    if not unbuffered then request_job:wait() end
+    if not unbuffered then
+      request_job:wait()
+    end
 
     return true
   end)
@@ -188,11 +194,15 @@ M.run_parser = function(requests, line_nr, callback)
     variables, requests = DOCUMENT_PARSER.get_document()
   end
 
-  if not requests then return Logger.error("No requests found in the document") end
+  if not requests then
+    return Logger.error("No requests found in the document")
+  end
 
   if line_nr and line_nr > 0 then
     local request = DOCUMENT_PARSER.get_request_at(requests, line_nr)
-    if not request then return Logger.error("No request found at current line") end
+    if not request then
+      return Logger.error("No request found at current line")
+    end
 
     reqs_to_process = { request }
   end
