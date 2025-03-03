@@ -116,7 +116,7 @@ M.get_config_contenttype = function(headers)
 
     local config = CONFIG.get().contenttypes[content_type]
     if config then return config end
-    if content_type == "kulala/verbose" then return "kulala_verbose_result" end
+    if content_type == "kulala/verbose" then return { ft = "kulala_verbose_result" } end
   end
 
   return CONFIG.default_contenttype

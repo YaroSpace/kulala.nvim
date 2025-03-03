@@ -161,7 +161,7 @@ local function format_body()
     filetype = contenttype.ft
   end
 
-  return body, filetype or contenttype
+  return body, filetype or contenttype.ft
 end
 
 M.show_headers = function()
@@ -341,7 +341,7 @@ M.replay = function()
   local db = DB.global_update()
 
   CMD.run_parser({ last_request }, nil, function(success)
-    if success == false then return Logger.error("Unable to replay last request") end
+    if not success then return Logger.error("Unable to replay last request") end
 
     set_current_response(#db.responses)
     M.open_default_view()
