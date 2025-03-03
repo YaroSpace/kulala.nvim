@@ -151,8 +151,7 @@ local function save_response(request_status, parsed_request)
 
   if not response.status and #response.body == 0 and #response.errors > 0 then
     response.body = response.errors
-    response.headers = response.headers .. "Content-Type: text/plain\n"
-    --TODO: set kulala_verbose_result
+    response.headers = response.headers .. "Content-Type: kulala/verbose\n"
   end
 
   table.insert(responses, response)

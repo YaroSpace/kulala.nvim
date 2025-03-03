@@ -137,6 +137,7 @@ local function open_kulala_window(buf)
 end
 
 local function show(contents, filetype, mode)
+  filetype = filetype and "kulala_ui." .. filetype or "kulala_ui.text"
   local buf = open_kulala_buffer(filetype)
 
   set_buffer_contents(buf, contents, filetype)
@@ -160,7 +161,7 @@ local function format_body()
     filetype = contenttype.ft
   end
 
-  return body, filetype
+  return body, filetype or contenttype
 end
 
 M.show_headers = function()
