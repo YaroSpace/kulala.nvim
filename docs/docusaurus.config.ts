@@ -7,8 +7,8 @@ const config: Config = {
   tagline: "A minimal 🤏 HTTP-client 🐼 interface 🖥️ for Neovim ❤️.",
   favicon: "img/favicon.png",
 
-  url: "https://kulala.mwco.app",
-  baseUrl: "/",
+  url: "https://yarospace.github.io",
+  baseUrl: "/kulala.nvim/",
 
   organizationName: "mistweaverco",
   projectName: "kulala.nvim",
