@@ -29,6 +29,7 @@ local M = {}
 ---@field url string
 ---@field method string
 ---@field http_version string
+---@field processed -- Indicates request has been processed, used by replay()
 
 ---@alias DocumentVariables table<string, string|number|boolean>
 
@@ -62,6 +63,7 @@ local default_document_request = {
   url = "",
   http_version = "",
   method = "",
+  processed = false,
 }
 
 local function split_content_by_blocks(lines, line_offset)
