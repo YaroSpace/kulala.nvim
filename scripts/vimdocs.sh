@@ -4,6 +4,7 @@ set -o pipefail
 
 PANDOC_DIR=./scripts/pandoc
 PROJECT_NAME=kulala
+DESCRIPTION="A fully-featured REST Client Interface for Neovim."
 VIM_VERSION="Neovim >= 0.8.0"
 TOC=true
 
