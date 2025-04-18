@@ -1,3 +1,4 @@
+local Config = require("kulala.config")
 local Fs = require("kulala.utils.fs")
 local Logger = require("kulala.logger")
 local Table = require("kulala.utils.table")
@@ -60,7 +61,7 @@ local assert = {
 }
 
 setmetatable(assert, {
-  __call = function(value, message)
+  __call = function(_, value, message)
     assert.is_true(value, message)
   end,
   __index = {
@@ -80,7 +81,7 @@ local client = {
   log = function(msg)
     msg = vim.inspect(msg)
     script_env.output[script_env.type] = script_env.output[script_env.type] .. msg .. "\n"
-    Logger.info(msg)
+    _ = not Config.options.ui.disable_script_print_output and Logger.info(msg)
   end,
   global = {},
   test = function(name, fn)
@@ -161,7 +162,7 @@ M.run = function(type, scripts, _request, _response)
 
   if not _response then return end
 
-  _response.script_pre_output = script_env.output.pre_request
+  _response.script_pre_output = script_env.output.pre_request -- FIXME: write to file
   _response.script_post_output = script_env.output.post_request
   _response.assert_output = script_env.output.assert_output
 

@@ -116,7 +116,7 @@ local function process_external(request, response)
   response.script_post_output = #response.script_post_output > 0 and response.script_post_output
     or FS.read_file(GLOBALS.SCRIPT_POST_OUTPUT_FILE)
     or ""
-  response.assert_output = #response.assert_output > 0 and response.assert_output
+  response.assert_output = response.assert_output and response.assert_output
     or FS.read_json(GLOBALS.ASSERT_OUTPUT_FILE)
     or {}
 
@@ -380,8 +380,8 @@ end
 ---@param line_nr? number|nil
 ---@param callback function
 ---@return nil
-M.run_parser = function(requests, line_nr, callback)
-  local variables, reqs_to_process
+M.run_parser = function(requests, variables, line_nr, callback)
+  local reqs_to_process
 
   M.queue:reset()
 

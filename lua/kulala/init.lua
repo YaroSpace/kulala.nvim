@@ -21,10 +21,12 @@ end
 
 M.run = function()
   UI:open()
+  return true
 end
 
 M.run_all = function()
   UI:open_all()
+  return true
 end
 
 M.replay = function()
