@@ -2,7 +2,7 @@
 
 _, LOG = pcall(require, "log")
 
---TODO: install script: download nvim.appimage and install kulala
+--TODO: add * for all files
 
 --# selene: allow(unscoped_variables)
 --# selene: allow(unused_variable)
@@ -78,8 +78,6 @@ local function get_args()
   )
 
   parser:option("-e --env", "Environment")
-  -- parser:option("-f --env-file", "Environment file", "http-client.env.json")
-  -- parser:option("-p --private", "Private environment file", "http-client.private.env.json")
   parser:option("-v --view", "Response view"):choices({
     "body",
     "headers",

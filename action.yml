@@ -1,0 +1,27 @@
+---
+name: 'Kulala CLI action'
+description: 'Execute HTTP files with Kulala'
+author: 'Yaro Apletov'
+branding:
+  color: 'purple'
+  icon: 'moon'
+inputs:
+  main:
+    description: |
+      Shell script with the call to kulala_cli and relevant options
+    required: false
+    default: '*'
+runs:
+  using: "composite"
+  steps:
+  - name: Setup Kulala
+    uses: actions/checkout@v2
+    with:
+      repository: yarospace/kulala.nvim
+
+  - uses: rhysd/action-setup-vim@v1
+    with:
+      neovim: true
+
+  - run: ${{ github.action_path }}/lua/cli/kulala_cli.sh
+    shell: bash
