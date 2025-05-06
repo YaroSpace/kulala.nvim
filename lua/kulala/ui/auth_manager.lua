@@ -186,7 +186,7 @@ local function open_auth_snacks()
   local keys = {}
 
   vim.iter(commands):each(function(key)
-    _actions[key] = function(ctx, item, action)
+    _actions[key] = function(ctx, item)
       run_cmd(key, ctx, item)
     end
     keys[key] = { key, mode = { "n" }, desc = commands[key][2] }
