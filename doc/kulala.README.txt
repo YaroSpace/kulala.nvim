@@ -5,6 +5,9 @@ Table of Contents                            *kulala.README-table-of-contents*
 
 1. kulala.nvim                                     |kulala.README-kulala.nvim|
   - Features                              |kulala.README-kulala.nvim-features|
+  - Together with Kulala Language Server and Kulala Formatter, Kulala aims to provide the best REST Client experience on the web without leaving your favourite editor!|kulala.README-kulala.nvim-together-with-kulala-language-server-and-kulala-formatter,-kulala-aims-to-provide-the-best-rest-client-experience-on-the-web-without-leaving-your-favourite-editor!|
+  - We love feature requests and feedback, so if you have any ideas or suggestions, please let us know!|kulala.README-kulala.nvim-we-love-feature-requests-and-feedback,-so-if-you-have-any-ideas-or-suggestions,-please-let-us-know!|
+  - We will be happy to implement them ❤️|kulala.README-kulala.nvim-we-will-be-happy-to-implement-them-❤️|
   - Install                                |kulala.README-kulala.nvim-install|
   - Honorable mentions          |kulala.README-kulala.nvim-honorable-mentions|
 2. Links                                                 |kulala.README-links|
@@ -55,13 +58,13 @@ CLI tooling and CI hooks
 Scratchpad: for making requests
 
 
-TOGETHER WITH KULALA LANGUAGE SERVER AND KULALA FORMATTER, KULALA AIMS TO PROVIDE THE BEST REST CLIENT EXPERIENCE ON THE WEB WITHOUT LEAVING YOUR FAVOURITE EDITOR! Kulala Language Server https://github.com/mistweaverco/kulala-ls Kulala Formatter https://github.com/mistweaverco/kulala-fmt
+TOGETHER WITH KULALA LANGUAGE SERVER AND KULALA FORMATTER, KULALA AIMS TO PROVIDE THE BEST REST CLIENT EXPERIENCE ON THE WEB WITHOUT LEAVING YOUR FAVOURITE EDITOR!*kulala.README-kulala.nvim-together-with-kulala-language-server-and-kulala-formatter,-kulala-aims-to-provide-the-best-rest-client-experience-on-the-web-without-leaving-your-favourite-editor!* Kulala Language Server https://github.com/mistweaverco/kulala-ls Kulala Formatter https://github.com/mistweaverco/kulala-fmt
 
 
-WE LOVE FEATURE REQUESTS AND FEEDBACK, SO IF YOU HAVE ANY IDEAS OR SUGGESTIONS, PLEASE LET US KNOW!
+WE LOVE FEATURE REQUESTS AND FEEDBACK, SO IF YOU HAVE ANY IDEAS OR SUGGESTIONS, PLEASE LET US KNOW!*kulala.README-kulala.nvim-we-love-feature-requests-and-feedback,-so-if-you-have-any-ideas-or-suggestions,-please-let-us-know!*
 
 
-WE WILL BE HAPPY TO IMPLEMENT THEM ❤️
+WE WILL BE HAPPY TO IMPLEMENT THEM ❤️*kulala.README-kulala.nvim-we-will-be-happy-to-implement-them-❤️*
 
 
 INSTALL                                    *kulala.README-kulala.nvim-install*
@@ -88,6 +91,7 @@ CONFIGURATION
         opts = {
           -- your configuration comes here
           global_keymaps = false,
+          global_keymaps_prefix = "<leader>R",
         },
       },
     })
