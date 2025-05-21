@@ -477,7 +477,7 @@ describe("requests", function()
       assert.has_string(request_body_computed, '"variables":{"id":1}')
     end)
 
-    it("runs GraphQL request method", function()
+    it("#wip runs GraphQL request method", function()
       curl.stub({
         ["https://countries.trevorblades.com"] = {
           body = h.load_fixture("fixtures/graphql_schema_body.txt"),
@@ -504,10 +504,15 @@ describe("requests", function()
       kulala.run()
       wait_for_requests(1)
 
-      local request_body_computed = DB.data.current_request.body_computed
+      local request = DB.data.current_request
 
-      assert.has_string(request_body_computed, '"query":"query Person($id: ID) { person(personID: $id) { name } }')
-      assert.has_string(request_body_computed, '"variables":{"id":1}')
+      assert.is_same("POST", request.method)
+      assert.has_properties(request.headers, {
+        ["Content-Type"] = "application/json",
+      })
+
+      assert.has_string(request.body_computed, '"query":"query Person($id: ID) { person(personID: $id) { name } }')
+      assert.has_string(request.body_computed, '"variables":{"id":1}')
     end)
 
     it("runs API callbacks", function()
